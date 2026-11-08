@@ -1,0 +1,11 @@
+[user]
+	name = SamerKolasevic29
+	email = samer.kolasevic.24@size.ba
+[core]
+	editor = vim
+[init]
+	defaultBranch = main
+[color]
+	ui = auto
+[credential]
+	helper = store
