@@ -1,0 +1,61 @@
+# Arch Linux (pacman, zvanicni repoi)
+# Jedan paket po liniji, # = komentar
+# AUR paketi (yay) su u aur-packages.txt
+# bash-color-prompt je samo Fedora, ovdje ga nema
+
+## Sistem / mreza
+bash-completion
+btrfs-progs
+curl
+wget
+tar
+gzip
+rsync
+parted
+util-linux
+whois
+inetutils             # daje 'hostname'
+net-tools
+iproute2
+nmap
+openssh               # klijent + server
+nginx
+cloudflared
+
+## Terminal alati
+htop
+btop
+tree
+tldr
+fastfetch
+cmatrix
+vim
+nano
+
+## Aplikacije
+firefox
+vlc
+ffmpeg
+imagemagick
+inkscape
+kdeconnect
+
+## C / C++ razvoj (gcc + clang, sve za VS Code)
+base-devel            # gcc (+g++), make, binutils, pkgconf...
+clang                 # u Archu ukljucuje clangd, clang-tidy, clang-format
+lldb
+gdb
+cmake
+ninja
+poppler               # headeri za poppler-cpp su u istom paketu
+
+## Java
+jdk-openjdk
+
+## Python
+python
+python-pip
+
+## .NET
+dotnet-sdk
+aspnet-runtime
