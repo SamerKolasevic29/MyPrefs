@@ -1,0 +1,67 @@
+# Debian / Ubuntu (apt)
+# Jedan paket po liniji, # = komentar
+# 'code' i 'cloudflared' dolaze iz vanjskih repoa (install.sh ih doda sam)
+# 'firefox' (Ubuntu) / 'firefox-esr' (Debian) rjesava install.sh
+# bash-color-prompt je samo Fedora, ovdje ga nema
+
+## Sistem / mreza
+bash-completion
+btrfs-progs
+curl
+wget
+tar
+gzip
+rsync
+parted
+util-linux
+whois
+hostname
+net-tools
+iproute2
+nmap
+openssh-client
+openssh-server
+nginx
+cloudflared
+
+## Terminal alati
+htop
+btop
+tree
+tldr
+fastfetch             # Ubuntu 24.04 ga nema u repou (Debian 13 / Ubuntu 25.04+ ima)
+cmatrix
+vim
+nano
+
+## Aplikacije
+vlc
+ffmpeg
+imagemagick
+inkscape
+kdeconnect
+code
+
+## C / C++ razvoj (gcc + clang, sve za VS Code)
+build-essential       # gcc, g++, make, libc-dev
+clang
+clangd
+clang-format
+clang-tidy
+lldb
+gdb
+cmake
+ninja-build
+pkg-config
+libpoppler-cpp-dev
+
+## Java
+default-jdk
+
+## Python
+python3
+python3-pip
+python3-venv
+
+## .NET
+dotnet-sdk-10.0       # Ubuntu 24.04+; na Debianu treba Microsoft repo (vidi README)

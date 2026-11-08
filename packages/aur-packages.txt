@@ -1,0 +1,3 @@
+# AUR (yay) - samo za Arch
+# Microsoft build sa marketplaceom i sync-om (paket 'code' u extra je OSS build)
+visual-studio-code-bin
