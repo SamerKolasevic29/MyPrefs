@@ -1,0 +1,14 @@
+llvm-vs-code-extensions.vscode-clangd
+ms-dotnettools.csdevkit
+ms-dotnettools.csharp
+ms-dotnettools.vscode-dotnet-runtime
+ms-mssql.data-workspace-vscode
+ms-mssql.mssql
+ms-mssql.sql-bindings-vscode
+ms-mssql.sql-database-projects-vscode
+ms-python.debugpy
+ms-python.python
+ms-python.vscode-pylance
+ms-python.vscode-python-envs
+platformio.platformio-ide
+ritwickdey.liveserver

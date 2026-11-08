@@ -1,0 +1,136 @@
+{
+    // 1. FONT - Točno onaj 'kockasti' izgled sa slike
+     "editor.fontFamily": "'Consolas', 'Cascadia Code', monospace",
+    "editor.fontSize": 15,
+    "editor.fontWeight": "normal",
+    "editor.letterSpacing": 0.5,
+
+    // 2. UI BOJE - Pozadina i okviri (Hex sa slike)
+    "workbench.colorCustomizations": {
+        "editor.background": "#272f32",        // Ona specifična tamno sivo-zelena
+        "editor.foreground": "#E0E2E4",        // Običan tekst (bijelo-siv)
+        "editorCursor.foreground": "#E0E2E4",
+        "editorLineNumber.foreground": "#556066", // Brojevi linija (tamniji)
+        "editorLineNumber.activeForeground": "#E0E2E4",
+        "sideBar.background": "#293134",
+        "activityBar.background": "#293134",
+        "statusBar.background": "#22282A",
+        
+        // Ona crna traka kad označiš liniju (kao na liniji 602 na slici)
+        "editor.lineHighlightBackground": "#000000", 
+        "editor.lineHighlightBorder": "#000000" 
+    },
+
+    // 3. SYNTAX HIGHLIGHTING - Boje koda
+    "editor.tokenColorCustomizations": {
+        "textMateRules": [
+            {
+                // KLJUČNE RIJEČI (int, for, if, return, void) - STEEL BLUE
+                "scope": [
+                    "keyword", 
+                    "storage.type", 
+                    "storage.modifier",
+                    "keyword.control"
+                ],
+                "settings": {
+                    "foreground": "#678CB1", 
+                    "fontStyle": "bold"
+                }
+            },
+            {
+                // STRINGOVI ("Dumping queen...") - NARANČASTA
+                "scope": "string",
+                "settings": {
+                    "foreground": "#EC7600"
+                }
+            },
+            {
+                // PREPROCESSOR (#ifdef, #include) - LJUBIČASTA
+                "scope": ["keyword.control.directive", "meta.preprocessor"],
+                "settings": {
+                    "foreground": "#A082BD"
+                }
+            },
+            {
+                // KOMENTARI (// Probeer als...) - SIVO-ZELENKASTA
+                "scope": "comment",
+                "settings": {
+                    "foreground": "#4cf61e",
+                    "fontStyle": "italic"
+                }
+            },
+            {
+                // BROJEVI (-1, 0) - ŽUTA/ZLATNA
+                "scope": ["constant.numeric"],
+                "settings": {
+                    "foreground": "#FFCD22"
+                }
+            },
+            {
+                // FUNKCIJE (FindValueColor) - BIJELO/SIVA
+                "scope": ["entity.name.function", "support.function"],
+                "settings": {
+                    "foreground": "#E0E2E4",
+                    "fontStyle": "" // Nije boldano na slici
+                }
+            },
+            {
+                // KONSTANTE (COLOR_SPADES, VALUE_QUEEN) - SVJETLIJE PLAVA/SIVA
+                "scope": "variable.other.constant",
+                "settings": {
+                    "foreground": "#E0E2E4" 
+                }
+            }
+        ]
+    },
+
+    // ---- Opcenito ----
+    "terminal.external.linuxExec": "konsole",
+    "explorer.confirmDelete": false,
+    "explorer.confirmDragAndDrop": false,
+    "explorer.confirmPasteNative": false,
+    "workbench.editor.enablePreview": false,
+    "workbench.editor.empty.hint": "hidden",
+    "files.autoSave": "afterDelay",
+    "files.associations": {
+        "*.sql": "sql"
+    },
+    "github.copilot.enable": {
+        "*": false,
+        "plaintext": false,
+        "markdown": false,
+        "scminput": false
+    },
+    "chat.disableAIFeatures": true,
+
+    // ---- C++ (clangd; Microsoft IntelliSense je ugasen) ----
+    "C_Cpp.intelliSenseEngine": "disabled",
+    "[cpp]": {
+        "editor.wordBasedSuggestions": "off",
+        "editor.semanticHighlighting.enabled": true,
+        "editor.stickyScroll.defaultModel": "foldingProviderModel",
+        "editor.suggest.insertMode": "replace"
+    },
+
+    // ---- Prijedlozi / autocomplete ----
+    "editor.quickSuggestions": {
+        "other": true,
+        "comments": false,
+        "strings": true
+    },
+    "editor.suggestOnTriggerCharacters": true,
+    "editor.acceptSuggestionOnEnter": "on",
+    "editor.tabCompletion": "on",
+    "editor.inlineSuggest.enabled": false,
+    "editor.suggest.snippetsPreventQuickSuggestions": false,
+
+    // ---- Live Server ----
+    "liveServer.settings.AdvanceCustomBrowserCmdLine": "",
+    "liveServer.settings.host": "0.0.0.0",
+    "liveServer.settings.useLocalIp": true,
+    "liveServer.settings.donotShowInfoMsg": true,
+
+    // ---- SQL Server ----
+    "mssql.enableQueryHistoryCapture": true,
+    "mssql.autoDisableNonTSqlLanguageService": false
+}
