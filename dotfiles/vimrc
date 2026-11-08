@@ -1,0 +1,383 @@
+" Parentheses ()
+inoremap ( ()<Esc>ha
+
+" Curly Braces {}
+inoremap { {}<Esc>ha
+
+" Square Brackets []
+inoremap [ []<Esc>ha
+
+" Quotes "" and ''
+inoremap " ""<Esc>ha
+inoremap ' ''<Esc>ha
+
+
+" =====================================================================
+"  vimrc  -  Vim 8.2+ / Vim 9 / Neovim
+"  Ctrl-Space : file explorer (remembers expanded directories)
+"  Ctrl-/     : bottom terminal (stays alive when hidden)
+" =====================================================================
+
+set nocompatible
+set encoding=utf-8
+syntax on
+filetype plugin indent on
+
+" ---------- Basics ----------
+set hidden                " allow hidden buffers (needed for the terminal)
+set number
+set cursorline
+set mouse=a
+set ignorecase smartcase
+set incsearch hlsearch
+set expandtab shiftwidth=4 tabstop=4
+set scrolloff=5
+set splitbelow splitright
+set ttimeout ttimeoutlen=10
+set updatetime=300
+nnoremap <silent> <Esc><Esc> :nohlsearch<CR>
+
+" Line numbers: muted, greyish dark red; current line slightly brighter
+function! s:NumberColors() abort
+  highlight LineNr       ctermfg=95  guifg=#7d5a5a ctermbg=NONE guibg=NONE
+  highlight CursorLineNr ctermfg=131 guifg=#b36b6b ctermbg=NONE guibg=NONE cterm=NONE gui=NONE
+endfunction
+call s:NumberColors()
+augroup NumberColors
+  autocmd!
+  autocmd ColorScheme * call s:NumberColors()
+augroup END
+
+" =====================================================================
+"  FILE EXPLORER
+" =====================================================================
+let s:state_file  = expand('~/.vim_explorer_state')
+let s:root        = fnamemodify(get(g:, 'explorer_root', $HOME), ':p:h')
+let s:width       = get(g:, 'explorer_width', 32)
+let s:expanded    = {}
+let s:show_hidden = 0
+let s:buf         = -1
+let s:lines       = []
+let s:nodes       = []
+let s:cur_path    = ''      " last cursor position (path)
+let s:cur_top     = 1       " last top line of the window (scroll)
+
+function! s:Hi() abort
+  highlight ExplorerDir ctermfg=Red guifg=#ff5555 cterm=bold gui=bold
+endfunction
+call s:Hi()
+augroup ExplorerHi
+  autocmd!
+  autocmd ColorScheme * call s:Hi()
+augroup END
+
+" ---- state (expanded directories) ----
+function! s:LoadState() abort
+  if !filereadable(s:state_file) | return | endif
+  try
+    let l:d = json_decode(join(readfile(s:state_file), ''))
+    let s:expanded = {}
+    for l:p in get(l:d, 'expanded', [])
+      let s:expanded[l:p] = 1
+    endfor
+    let s:show_hidden = get(l:d, 'hidden', 0)
+    let s:cur_path    = get(l:d, 'cursor', '')
+    let s:cur_top     = get(l:d, 'top', 1)
+  catch
+  endtry
+endfunction
+
+function! s:SaveState() abort
+  try
+    call writefile([json_encode({'expanded': keys(s:expanded), 'hidden': s:show_hidden, 'cursor': s:cur_path, 'top': s:cur_top})], s:state_file)
+  catch
+  endtry
+endfunction
+
+call s:LoadState()
+augroup ExplorerState
+  autocmd!
+  autocmd VimLeavePre * if s:Win() > 0 | execute s:Win() . 'wincmd w' | call s:RememberCursor() | endif | call s:SaveState()
+augroup END
+
+" ---- building the tree ----
+function! s:Build(dir, depth) abort
+  let l:dir = a:dir
+  try
+    let l:all = readdir(l:dir, {n -> (s:show_hidden || n[0] !=# '.') && n !=# '.git'})
+  catch
+    return
+  endtry
+  let l:dirs  = filter(copy(l:all), {_, n -> isdirectory(l:dir . '/' . n)})
+  let l:files = filter(copy(l:all), {_, n -> !isdirectory(l:dir . '/' . n)})
+  for l:name in l:dirs
+    let l:path = l:dir . '/' . l:name
+    let l:open = has_key(s:expanded, l:path)
+    call add(s:lines, repeat('  ', a:depth) . (l:open ? '▾ ' : '▸ ') . l:name . '/')
+    call add(s:nodes, {'path': l:path, 'dir': 1})
+    if l:open
+      call s:Build(l:path, a:depth + 1)
+    endif
+  endfor
+  for l:name in l:files
+    call add(s:lines, repeat('  ', a:depth) . '  ' . l:name)
+    call add(s:nodes, {'path': l:dir . '/' . l:name, 'dir': 0})
+  endfor
+endfunction
+
+function! s:Node() abort
+  return get(s:nodes, line('.') - 1, {})
+endfunction
+
+function! s:RememberCursor() abort
+  let l:n = s:Node()
+  if !empty(l:n)
+    let s:cur_path = l:n.path
+    let s:cur_top  = line('w0')
+    call s:SaveState()
+  endif
+endfunction
+
+function! s:Render(keep) abort
+  let l:top = line('w0')
+  let s:lines = [fnamemodify(s:root, ':~') . '/']
+  let s:nodes = [{'path': s:root, 'dir': 1, 'root': 1}]
+  call s:Build(s:root, 0)
+  setlocal modifiable
+  silent keepjumps %delete _
+  call setline(1, s:lines)
+  setlocal nomodifiable nomodified
+  for l:i in range(len(s:nodes))
+    if s:nodes[l:i].path ==# a:keep
+      call cursor(l:i + 1, 1)
+      break
+    endif
+  endfor
+  call winrestview({'topline': l:top, 'lnum': line('.')})
+endfunction
+
+" expand all parents of a file so that it becomes visible
+function! s:Reveal(path) abort
+  if a:path ==# '' || stridx(a:path, s:root . '/') != 0 | return | endif
+  let l:d = fnamemodify(a:path, ':h')
+  while l:d !=# s:root && l:d !=# '/' && l:d !=# '.'
+    let s:expanded[l:d] = 1
+    let l:d = fnamemodify(l:d, ':h')
+  endwhile
+endfunction
+
+" ---- actions ----
+function! s:OpenFile(path) abort
+  " find a regular window (not explorer, not terminal)
+  for l:w in range(1, winnr('$'))
+    let l:b = winbufnr(l:w)
+    if getbufvar(l:b, '&buftype') ==# ''
+      execute l:w . 'wincmd w'
+      execute 'edit ' . fnameescape(a:path)
+      return
+    endif
+  endfor
+  wincmd l
+  execute 'vertical rightbelow new'
+  execute 'edit ' . fnameescape(a:path)
+endfunction
+
+function! s:Toggle() abort          " Space / Enter
+  let l:n = s:Node()
+  if empty(l:n) || get(l:n, 'root', 0) | return | endif
+  if l:n.dir
+    if has_key(s:expanded, l:n.path)
+      call remove(s:expanded, l:n.path)
+    else
+      let s:expanded[l:n.path] = 1
+    endif
+    call s:SaveState()
+    call s:Render(l:n.path)
+  else
+    call s:OpenFile(l:n.path)
+  endif
+endfunction
+
+function! s:Expand() abort          " l / Right
+  let l:n = s:Node()
+  if empty(l:n) | return | endif
+  if !l:n.dir
+    call s:OpenFile(l:n.path)
+  elseif !has_key(s:expanded, l:n.path) && !get(l:n, 'root', 0)
+    let s:expanded[l:n.path] = 1
+    call s:SaveState()
+    call s:Render(l:n.path)
+  else
+    normal! j
+  endif
+endfunction
+
+function! s:Collapse() abort        " h / Left
+  let l:n = s:Node()
+  if empty(l:n) || get(l:n, 'root', 0) | return | endif
+  if l:n.dir && has_key(s:expanded, l:n.path)
+    call remove(s:expanded, l:n.path)
+    call s:SaveState()
+    call s:Render(l:n.path)
+  else
+    let l:parent = fnamemodify(l:n.path, ':h')
+    for l:i in range(len(s:nodes))
+      if s:nodes[l:i].path ==# l:parent
+        call cursor(l:i + 1, 1)
+        break
+      endif
+    endfor
+  endif
+endfunction
+
+function! s:ToggleHidden() abort
+  let s:show_hidden = !s:show_hidden
+  call s:SaveState()
+  call s:Render(get(s:Node(), 'path', ''))
+endfunction
+
+function! s:Refresh() abort
+  call s:Render(get(s:Node(), 'path', ''))
+endfunction
+
+" ---- window ----
+function! s:Win() abort
+  return (s:buf > 0 && bufexists(s:buf)) ? bufwinnr(s:buf) : -1
+endfunction
+
+function! s:Open() abort
+  let l:cur = expand('%:p')
+  execute 'topleft vertical ' . s:width . 'new'
+  let s:buf = bufnr('%')
+  setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted
+  setlocal nonumber norelativenumber nowrap nospell winfixwidth
+  setlocal cursorline nolist foldcolumn=0 signcolumn=no
+  setlocal filetype=explorer
+  silent! file Explorer
+  syntax match ExplorerDir /^.*\/$/
+
+  nnoremap <buffer> <silent> <Space> :call <SID>Toggle()<CR>
+  nnoremap <buffer> <silent> <CR>    :call <SID>Toggle()<CR>
+  nnoremap <buffer> <silent> l       :call <SID>Expand()<CR>
+  nnoremap <buffer> <silent> <Right> :call <SID>Expand()<CR>
+  nnoremap <buffer> <silent> h       :call <SID>Collapse()<CR>
+  nnoremap <buffer> <silent> <Left>  :call <SID>Collapse()<CR>
+  nnoremap <buffer> <silent> .       :call <SID>ToggleHidden()<CR>
+  nnoremap <buffer> <silent> R       :call <SID>Refresh()<CR>
+  nnoremap <buffer> <silent> q       :close<CR>
+  " j/k and arrow keys work by default
+
+  autocmd BufWinLeave <buffer> call s:RememberCursor()
+
+  " the remembered position wins; if there is none, show the current file
+  let l:keep = l:cur
+  if s:cur_path !=# '' && stridx(s:cur_path, s:root) == 0 && (isdirectory(s:cur_path) || filereadable(s:cur_path))
+    let l:keep = s:cur_path
+    " make sure parents are expanded (so the node is visible)
+    let l:d = fnamemodify(l:keep, ':h')
+    while l:d !=# s:root && l:d !=# '/' && l:d !=# '.'
+      let s:expanded[l:d] = 1
+      let l:d = fnamemodify(l:d, ':h')
+    endwhile
+    let l:restore = 1
+  else
+    call s:Reveal(l:cur)
+    let l:restore = 0
+  endif
+  call s:Render(l:keep)
+  if l:restore
+    call winrestview({'topline': s:cur_top, 'lnum': line('.')})
+  endif
+endfunction
+
+function! ExplorerToggle() abort
+  let l:w = s:Win()
+  if l:w == winnr()
+    close
+  elseif l:w > 0
+    execute l:w . 'wincmd w'
+  else
+    call s:Open()
+  endif
+endfunction
+
+" Ctrl-Space (terminals send it as <C-@>)
+nnoremap <silent> <C-@>     :call ExplorerToggle()<CR>
+nnoremap <silent> <C-Space> :call ExplorerToggle()<CR>
+inoremap <silent> <C-@>     <Esc>:call ExplorerToggle()<CR>
+inoremap <silent> <C-Space> <Esc>:call ExplorerToggle()<CR>
+if exists(':tnoremap')
+  tnoremap <silent> <C-@>     <C-\><C-n>:call ExplorerToggle()<CR>
+  tnoremap <silent> <C-Space> <C-\><C-n>:call ExplorerToggle()<CR>
+endif
+
+" if the explorer is the last window, quit Vim
+augroup ExplorerAutoQuit
+  autocmd!
+  autocmd BufEnter * if winnr('$') == 1 && &filetype ==# 'explorer' | quit | endif
+augroup END
+
+" =====================================================================
+"  TERMINAL (Ctrl-/)
+" =====================================================================
+let s:term_buf    = -1
+let s:term_height = get(g:, 'terminal_height', 14)
+
+function! s:TermAlive() abort
+  if !(s:term_buf > 0 && bufloaded(s:term_buf)) | return 0 | endif
+  if has('nvim') | return 1 | endif
+  return term_getstatus(s:term_buf) =~# 'running'
+endfunction
+
+function! s:TermWin() abort
+  return s:TermAlive() ? bufwinnr(s:term_buf) : -1
+endfunction
+
+function! s:TermEnterInput() abort
+  if has('nvim')
+    startinsert
+  else
+    silent! normal! i
+  endif
+endfunction
+
+function! TerminalToggle() abort
+  let l:w = s:TermWin()
+  if l:w == winnr()                 " focused -> hide (shell stays alive)
+    hide
+  elseif l:w > 0                    " visible but not focused -> focus it
+    execute l:w . 'wincmd w'
+    call s:TermEnterInput()
+  elseif s:TermAlive()              " hidden -> bring back the same terminal
+    execute 'botright ' . s:term_height . 'split'
+    execute 'buffer ' . s:term_buf
+    call s:TermEnterInput()
+  else                              " doesn't exist -> create a new one
+    if has('nvim')
+      execute 'botright ' . s:term_height . 'new'
+      terminal
+      startinsert
+    else
+      execute 'botright terminal ++rows=' . s:term_height . ' ++close'
+    endif
+    let s:term_buf = bufnr('%')
+    setlocal nobuflisted bufhidden=hide nonumber norelativenumber signcolumn=no
+  endif
+endfunction
+
+if has('nvim')
+  augroup TermClean
+    autocmd!
+    autocmd TermClose * if bufnr('%') == s:term_buf | bdelete! | endif
+  augroup END
+endif
+
+" Ctrl-/ (terminals send it as <C-_>, GUI as <C-/>)
+nnoremap <silent> <C-_> :call TerminalToggle()<CR>
+nnoremap <silent> <C-/> :call TerminalToggle()<CR>
+inoremap <silent> <C-_> <Esc>:call TerminalToggle()<CR>
+inoremap <silent> <C-/> <Esc>:call TerminalToggle()<CR>
+if exists(':tnoremap')
+  tnoremap <silent> <C-_> <C-\><C-n>:call TerminalToggle()<CR>
+  tnoremap <silent> <C-/> <C-\><C-n>:call TerminalToggle()<CR>
+endif
